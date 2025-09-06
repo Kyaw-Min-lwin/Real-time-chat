@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ group.title }} - Chat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/styles.css" />
+    <style>
+        body,
+        html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            display: flex;
+            height: calc(100vh - 56px);
+            /* Account for navbar height */
+        }
+
+        .chat-sidebar {
+            width: 250px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #e9ecef;
+        }
+
+        .chat-header {
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+            background-color: #fff;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .message {
+            max-width: 70%;
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            position: relative;
+            word-wrap: break-word;
+            background-color: #ffffff;
+        }
+
+        .message.outgoing {
+            margin-left: auto;
+            background-color: #d1e7dd;
+        }
+
+        .message-header {
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: #6c757d;
+            position: absolute;
+            bottom: 5px;
+            right: 10px;
+        }
+
+        .chat-input {
+            border-top: 1px solid #dee2e6;
+            padding: 1rem;
+            background-color: #fff;
+        }
+
+        .chat-input .input-group {
+            align-items: center;
+        }
+
+        footer {
+            display: none;
+        }
+
+        .chat-messages {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .message-wrapper {
+            display: flex;
+        }
+
+        .message-left {
+            justify-content: flex-start;
+        }
+
+        .message-right {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            /* Rounded corners for chat bubble style */
+            border-radius: 15px;
+        }
+
+        .message-right .message-content {
+            background-color: #0d6efd;
+            /* Bootstrap primary */
+            color: white;
+            border-radius: 15px 15px 0 15px;
+        }
+
+        .message-left .message-content {
+            background-color: #f1f1f1;
+            color: black;
+            border-radius: 15px 15px 15px 0;
+        }
+
+        /* Optional: smaller text for timestamp & username */
+        .message-content small {
+            font-size: 0.75rem;
+            display: block;
+            margin-bottom: 0.25rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">Real Time Chat</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if session.get('loggedin') %}
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="{{ url_for('logout') }}">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="container mt-3">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Chat Layout -->
+    <div class="chat-container">
+        <!-- Sidebar -->
+        <aside class="chat-sidebar">
+            <h5 class="mb-3">{{ group.title }}</h5>
+            <p class="text-muted">{{ group.description }}</p>
+            <hr />
+            <!-- Future: List of group members or conversations -->
+            <h5 class="text-muted">Group Members</h5>
+            <ul class="list-unstyled">
+                {% for member in group_members %}
+                <li>{{ member.name }}</li>
+                {% endfor %}
+            </ul>
+
+            <!-- Leave Group Button -->
+            <form action="{{ url_for('leave_group') }}" method="POST" class="mt-4" id="leaveForm">
+                <input type="hidden" name="group_id" value="{{ group.id }}">
+                <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                    Leave Group
+                </button>
+            </form>
+
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="chat-main">
+            <div class="chat-header">
+                <h6 class="mb-0">Chat Room</h6>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                {% if messages %}
+                {% for msg in messages %}
+                <div
+                    class="message-wrapper {% if msg.user_id == session['id'] %}message-right{% else %}message-left{% endif %}">
+                    <div
+                        class="message-content {% if msg.user_id == session['id'] %}bg-primary text-white{% else %}bg-light border{% endif %} p-2 rounded">
+                        <small class="text-muted">
+                            {{ msg.sender_name }} &bull; {{ msg.updated_at }}
+                        </small>
+                        <p class="mb-0">{{ msg.content }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted">No messages yet. Be the first to start the conversation!</p>
+                {% endif %}
+            </div>
+
+            <form id="chatForm" class="chat-input">
+                <div class="input-group">
+                    <input type="text" id="msgInput" name="message" class="form-control" placeholder="Type a message..."
+                        required>
+                    <button type="submit" class="btn btn-primary" id="sendBtn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" integrity="sha384-..." crossorigin="anonymous"></script>
+
+    <script>
+        const socket = io();
+        socket.on("connect", () => console.log("Socket connected!"));
+        socket.on("disconnect", () => console.log("Socket disconnected!"));
+        const groupId = {{ group.id }};    // number
+        const username = "{{ session['name'] }}";  // string
+        const userId = {{ session['id'] }};
+
+
+        // join room on page load
+        socket.emit('join', { 'group_id': groupId, 'username': username, 'user_id': userId });
+
+        document.getElementById("sendBtn").onclick = (e) => {
+            e.preventDefault();
+            const msgInput = document.getElementById("msgInput");
+            const msg = msgInput.value.trim();
+            if (!msg) return;
+
+            socket.emit("send_message", {
+                group_id: groupId,
+                content: msg,
+                user_id: userId,
+                sender_name: username
+            });
+
+            msgInput.value = "";
+        };
+
+
+        // receive message
+        socket.on("new_message", (data) => {
+            addMessageToChat(data);
+        });
+
+        socket.on("status", (data) => {
+            const chatMessages = document.getElementById("chatMessages");
+            const statusDiv = document.createElement("div");
+            statusDiv.className = "text-center text-muted my-2";
+            statusDiv.innerText = data.msg;
+            chatMessages.appendChild(statusDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+
+        // Leave group form submission
+        const leaveForm = document.getElementById("leaveForm");
+        leaveForm.addEventListener("submit", function (e){
+            e.preventDefault();
+            // notify the web socket
+            socket.emit('leave', { 'group_id': groupId, 'username': username, 'user_id': userId });
+            // submit the form
+            leaveForm.submit();
+        })
+
+        // function to add message to chat
+        function addMessageToChat(data) {
+            const chatMessages = document.getElementById("chatMessages");
+
+            // check if current user sent it
+            const alignment = data.user_id == userId ? "message-right" : "message-left";
+            const bubbleStyle = data.user_id == userId ? "bg-primary text-white" : "bg-light border";
+
+            const wrapper = document.createElement("div");
+            wrapper.className = `message-wrapper ${alignment}`;
+
+            wrapper.innerHTML = `
+        <div class="message-content ${bubbleStyle} p-2 rounded">
+            <small class="text-muted">
+                ${data.sender_name} &bull; ${data.updated_at || new Date().toLocaleTimeString()}
+            </small>
+            <p class="mb-0">${data.content}</p>
+        </div>
+    `;
+
+            chatMessages.appendChild(wrapper);
+
+            // scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register – Real Time Chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1f1c2c, #928dab);
+            font-family: 'Quicksand', sans-serif;
+            color: white;
+        }
+
+        .navbar {
+            background-color: #111 !important;
+        }
+
+        .navbar-brand {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ffc107 !important;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        input.form-control {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-bottom: 2px solid #ffc107;
+            color: white;
+        }
+
+        input.form-control:focus {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-color: #ffcd39;
+            box-shadow: none;
+        }
+
+        .btn-glow {
+            background-color: #ffc107;
+            border: none;
+            color: black;
+            font-weight: bold;
+            transition: 0.3s ease;
+            box-shadow: 0 0 10px #ffc10788;
+        }
+
+        .btn-glow:hover {
+            background-color: #ffcd39;
+            box-shadow: 0 0 20px #ffc107aa;
+        }
+
+        .footer {
+            background: #111;
+            color: #aaa;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">Real Time Chat</a>
+        </div>
+    </nav>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="container mt-3">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+
+    <!-- Register Section -->
+    <section class="d-flex justify-content-center align-items-center" style="min-height: 90vh;">
+        <div class="glass-card">
+            <h2 class="text-center mb-4">Create an Account</h2>
+            <form action="/register" method="POST">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="name" name="name" required
+                        placeholder="JohnDoe">
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="email" name="email" required
+                        placeholder="you@example.com">
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" required minlength="8"">
+                </div>
+                <div class="mb-3">
+                    <label for="confirm" class="form-label">Confirm Password</label>
+                    <input type="password" class="form-control" id="confirm" name="confirm" required minlength="8">
+                </div>
+                <button type="submit" class="btn btn-glow w-100 mt-3">Register</button>
+                <p class="text-center mt-3">
+                    Already have an account?
+                    <a href="/login" class="text-warning">Login</a>
+                </p>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer text-center py-3">
+        <small>© 2025 Real Time Chat. All rights reserved.</small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Real Time Chat - Home</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+
+<body>
+
+    <!-- Stylish Dark Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">Real Time Chat</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn nav-link" data-bs-toggle="modal" data-bs-target="#addChatModal">Create Chat
+                            Group</button>
+                    </li>
+
+                    <li class="nav-item">
+                        <button class="btn nav-link" data-bs-toggle="modal" data-bs-target="#joinGroupModal">
+                            Join Group
+                        </button>
+                    </li>
+
+
+                    {% if session.get('loggedin') %}
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="{{ url_for('logout') }}"><i
+                                class="bi bi-box-arrow-right"></i>
+                            Logout</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="container mt-3">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Hero Section -->
+    <section class="hero-section d-flex align-items-center">
+        <div class="container text-center text-white">
+            <h1 class="display-4 fw-bold mb-3 animate__animated animate__fadeInDown">
+                Trending Chat Rooms
+            </h1>
+            <p class="lead mb-4 animate__animated animate__fadeInUp animate__delay-1s">
+                Connect, chat, and share moments with friends in our vibrant chat rooms!
+            </p>
+        </div>
+    </section>
+
+
+    <section id="chats" class="featured-chats py-5 bg-light">
+        <div class="container">
+            <div class="row g-4">
+                {% for chat in chats %}
+                <div class="col-md-4">
+                    <div class="card chat-card shadow-sm h-100 group-card" data-group-id="{{ chat.id }}"
+                        data-group-name="{{ chat.name }}" data-is-private="{{ chat.isprivate }}"
+                        style="cursor: pointer;">
+                        <img src="{{ chat.image_url if chat.image_url else url_for('static', filename='default.png') }}"
+                            class="card-img-top img-fluid" style="height: 200px; object-fit: cover;"
+                            alt="{{ chat.name }}">
+
+                        <div class="card-body">
+                            <h5 class="card-title">{{ chat.title }}</h5>
+                            <p class="card-text">{{ chat.description }}</p>
+                            {% if chat.isprivate %}
+                            <span class="badge bg-warning text-dark"><i class="fas fa-lock"></i> Private</span>
+                            {% else %}
+                            <span class="badge bg-success"><i class="fas fa-globe"></i> Public</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+
+
+
+
+
+    <section class="cta-quote py-5 bg-warning text-center text-dark">
+        <div class="container">
+            <h4 class="fw-bold mb-0">
+                "Connection is why we're here; it is what gives purpose and meaning to our lives."
+            </h4>
+            <p class="mb-0">— Me</p>
+        </div>
+    </section>
+
+
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white pt-4 pb-2">
+        <div class="container text-center">
+            <div class="mb-3">
+                <a href="#" class="text-warning me-3"><i class="fab fa-facebook fa-lg"></i></a>
+                <a href="#" class="text-warning me-3"><i class="fab fa-instagram fa-lg"></i></a>
+                <a href="#" class="text-warning"><i class="fab fa-twitter fa-lg"></i></a>
+            </div>
+            <p class="mb-0">© 2025 Real Time Chat. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Add Modal -->
+    <div class="modal fade" id="addChatModal" tabindex="-1" aria-labelledby="addChatModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('create_group') }}" method="POST" enctype="multipart/form-data">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add New Chat Room</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Group Name</label>
+                            <input type="text" name="group_name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Group Image</label>
+                            <input type="file" name="group_image" class="form-control" accept="image/*">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="privacy">Privacy</label>
+                            <select name="privacy" id="privacy-select" class="form-control" required>
+                                <option value="public">Public</option>
+                                <option value="private">Private</option>
+                            </select>
+
+                            <div id="access-code-group" style="display: none; margin-top: 10px;">
+                                <label for="access_code">Access Code</label>
+                                <input type="text" name="access_code" id="access_code" class="form-control">
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">Add Chat</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Join Group Modal -->
+    <div class="modal fade" id="joinGroupModal" tabindex="-1" aria-labelledby="joinGroupModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <form method="POST" action="{{ url_for('join_group') }}" id="joinGroupForm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Join Group</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <!-- Group Search -->
+                        <div class="mb-3" id="searchContainer">
+                            <label for="search_group">Search Group</label>
+                            <input type="text" id="search_group" class="form-control" placeholder="Enter group name">
+                            <div id="search_results" class="list-group mt-2"></div>
+                        </div>
+
+                        <!-- Hidden inputs to submit -->
+                        <input type="hidden" name="group_id" id="group_id">
+                        <input type="hidden" name="isprivate" id="isprivate">
+
+                        <!-- Access Code (hidden by default) -->
+                        <div class="mb-3" id="access_code_group" style="display: none;">
+                            <label for="access_code2">Access Code</label>
+                            <input type="text" name="access_code2" id="access_code2" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Join</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const privacySelect = document.getElementById("privacy-select");
+            const accessCodeGroup = document.getElementById("access-code-group");
+
+            privacySelect.addEventListener("change", function () {
+                if (this.value === "private") {
+                    accessCodeGroup.style.display = "block";
+                    document.getElementById("access_code").required = true;
+                } else {
+                    accessCodeGroup.style.display = "none";
+                    document.getElementById("access_code").required = false;
+                }
+            });
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const searchInput = document.getElementById("search_group");
+            const resultsContainer = document.getElementById("search_results");
+            const groupIdInput = document.getElementById("group_id");
+            const isPrivateInput = document.getElementById("isprivate");
+            const accessCodeGroup = document.getElementById("access_code_group");
+
+            let debounceTimer;
+
+            searchInput.addEventListener("input", function () {
+                clearTimeout(debounceTimer);
+                const query = this.value.trim();
+                if (query.length < 2) {
+                    resultsContainer.innerHTML = '';
+                    return;
+                }
+
+                debounceTimer = setTimeout(() => {
+                    fetch(`/search_groups?q=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(groups => {
+                            resultsContainer.innerHTML = '';
+                            if (groups.length === 0) {
+                                resultsContainer.innerHTML = '<div class="list-group-item text-muted">No groups found</div>';
+                                return;
+                            }
+                            groups.forEach(group => {
+                                const item = document.createElement("button");
+                                item.type = "button";
+                                item.className = "list-group-item list-group-item-action";
+                                item.textContent = `${group.title} ${group.isprivate ? "(Private)" : "(Public)"}`;
+                                item.dataset.id = group.id;
+                                item.dataset.isprivate = group.isprivate;
+
+                                item.addEventListener("click", function () {
+                                    groupIdInput.value = this.dataset.id;
+                                    isPrivateInput.value = this.dataset.isprivate;
+                                    if (this.dataset.isprivate === "1" || this.dataset.isprivate === "true") {
+                                        accessCodeGroup.style.display = "block";
+                                        document.getElementById("access_code2").required = true;
+                                    } else {
+                                        accessCodeGroup.style.display = "none";
+                                        document.getElementById("access_code2").required = false;
+                                    }
+
+                                    // Optional: visually select
+                                    Array.from(resultsContainer.children).forEach(btn => btn.classList.remove("active"));
+                                    this.classList.add("active");
+                                });
+
+                                resultsContainer.appendChild(item);
+                            });
+                        });
+                }, 300);
+            });
+        });
+    </script>
+
+    <script>
+        document.querySelectorAll(".group-card").forEach(card => {
+            card.addEventListener("click", function () {
+                const groupId = this.dataset.groupId;
+                const groupName = this.dataset.groupName;
+                const isPrivate = this.dataset.isPrivate === "1" || this.dataset.isPrivate === "true";
+
+                // Set values for modal
+                document.getElementById("group_id").value = groupId;
+                document.getElementById("isprivate").value = isPrivate ? "1" : "0";
+
+                // Show or hide access code input
+                const accessCodeField = document.getElementById("access_code_group");
+                const accessCodeInput = document.getElementById("access_code2");
+
+                if (isPrivate) {
+                    // Show join modal with access code input
+                    const accessCodeField = document.getElementById("access_code_group");
+                    const accessCodeInput = document.getElementById("access_code2");
+
+                    document.getElementById("group_id").value = groupId;
+                    document.getElementById("isprivate").value = "1";
+
+                    accessCodeField.style.display = "block";
+                    accessCodeInput.required = true;
+                    document.getElementById("searchContainer").style.display = "none";
+
+                    // Clear search
+                    document.getElementById("search_group").value = "";
+                    document.getElementById("search_results").innerHTML = "";
+
+                    const modal = new bootstrap.Modal(document.getElementById("joinGroupModal"));
+                    modal.show();
+                } else {
+                    const form = document.createElement("form");
+                    form.method = "POST";
+                    form.action = "/join_group";
+
+                    const groupInput = document.createElement("input");
+                    groupInput.type = "hidden";
+                    groupInput.name = "group_id";
+                    groupInput.value = groupId;
+
+                    form.appendChild(groupInput);
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+
+
+                // Clear search field and results
+                document.getElementById("search_group").value = "";
+                document.getElementById("search_results").innerHTML = "";
+
+            });
+        });
+    </script>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
