@@ -14,6 +14,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import os
 import re
+from time import time
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO, emit, join_room, leave_room
@@ -39,6 +40,7 @@ limiter = Limiter(
     key_func=get_remote_address
 )
 limiter.init_app(app)
+messages_timestamps = {}
 
 # File upload configuration
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -58,7 +60,6 @@ def index():
     cursor.execute("SELECT * FROM chat_groups")
     chats = cursor.fetchall()
     return render_template("index.html", chats=chats)
-
 
 
 @app.route("/login/", methods=["GET", "POST"])
@@ -225,12 +226,23 @@ def handle_join(data):
 
 
 @socketio.on("send_message")
-@limiter.limit("10 per minute")
 def handle_message(data):
     user_id = data["user_id"]
     content = data["content"]
     group_id = str(data["group_id"])
     sender_name = data["sender_name"]
+
+    now = time()
+
+    timestamps = messages_timestamps.get(user_id, [])
+
+    timestamps = [ts for ts in timestamps if now - ts < 60]
+    # Remove timestamps older than 60 seconds
+    if len(timestamps) >= 10:
+        emit("error", {"msg": "Rate limit exceeded. Max 10 messages per 60 seconds."})
+        return
+    timestamps.append(now)
+    messages_timestamps[user_id] = timestamps
 
     # Save message to database
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)

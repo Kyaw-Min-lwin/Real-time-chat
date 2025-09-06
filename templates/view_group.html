@@ -289,6 +289,10 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         });
 
+            socket.on("error", (data) => {
+                alert(data.msg);
+            });
+
         // Leave group form submission
         const leaveForm = document.getElementById("leaveForm");
         leaveForm.addEventListener("submit", function (e){
